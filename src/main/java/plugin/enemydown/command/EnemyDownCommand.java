@@ -3,12 +3,15 @@ package plugin.enemydown.command;
 import java.util.List;
 import java.util.SplittableRandom;
 import org.bukkit.Location;
+import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.PlayerInventory;
 
 public class EnemyDownCommand implements CommandExecutor {
 
@@ -19,14 +22,42 @@ public class EnemyDownCommand implements CommandExecutor {
       //共通
       World world = player.getWorld();
 
-      //開始時に満タンにする
-      player.setHealth(20);
-      player.setFoodLevel(20);
 
-      //敵が出現
+
+      //初期化
+      initPlayerStatus(player);
+
+      //ゲーム終了 ゲーム開始時に退避したアイテムを戻す
+      //inventory.setHelmet(helmet);
+
+      //DAY13 敵が出現
       world.spawnEntity(getEnemySpawnLocation(player, world), getEnemy());
     }
     return false;
+  }
+
+  /**
+   * ゲームを始める前にプレイヤーの状態を設定する。
+   * 体力と空腹度を最大にして、装備はネザーライト一色になる。
+   *
+   * @param player  コマンドを実行したプレイヤー
+   */
+  private static void initPlayerStatus(Player player) {
+    //DAY12 開始時にプレイヤーのステータスを変更する
+    //体力と空腹度を最大値にする
+    player.setHealth(20);
+    player.setFoodLevel(20);
+
+    //DAY14 ゲームスタート時の装備変更
+    PlayerInventory inventory = player.getInventory();
+    //今持っている装備を退避
+    //ItemStack helmet = inventory.getHelmet();
+    //装備5点をダイヤ装備に変更
+    inventory.setHelmet(new ItemStack(Material.NETHERITE_HELMET));
+    inventory.setChestplate(new ItemStack(Material.NETHERITE_CHESTPLATE));
+    inventory.setLeggings(new ItemStack(Material.NETHERITE_LEGGINGS));
+    inventory.setBoots(new ItemStack(Material.NETHERITE_BOOTS));
+    inventory.setItemInMainHand(new ItemStack(Material.NETHERITE_SWORD));
   }
 
   /**
