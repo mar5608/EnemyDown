@@ -1,5 +1,6 @@
 package plugin.enemydown.command;
 
+import java.util.List;
 import java.util.SplittableRandom;
 import org.bukkit.Location;
 import org.bukkit.World;
@@ -22,12 +23,19 @@ public class EnemyDownCommand implements CommandExecutor {
       player.setHealth(20);
       player.setFoodLevel(20);
 
-
-
       //敵が出現
-      world.spawnEntity(getEnemySpawnLocation(player, world), EntityType.ZOMBIE);
+      world.spawnEntity(getEnemySpawnLocation(player, world), getEnemy());
     }
     return false;
+  }
+
+  /**
+   * ランダムで敵を抽選して、その結果の敵を取得します。
+   * @return  敵
+   */
+  private static EntityType getEnemy() {
+    List<EntityType> enemyList = List.of(EntityType.ZOMBIE , EntityType.SKELETON);
+    return enemyList.get(new SplittableRandom().nextInt(2));
   }
 
   /**
@@ -53,7 +61,7 @@ public class EnemyDownCommand implements CommandExecutor {
     double y = playerLocation.getY();
     double z = playerLocation.getZ() + randomZ;
     //random値出力
-    System.out.println("----------");
+    //System.out.println("----------");
     System.out.println("randomX: " + randomX + "randomZ: " + randomZ + "です");
     return new Location(world,x,y,z);
   }
