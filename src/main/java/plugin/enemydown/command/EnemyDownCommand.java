@@ -1,5 +1,7 @@
 package plugin.enemydown.command;
 
+import java.net.http.WebSocket;
+import java.net.http.WebSocket.Listener;
 import java.util.List;
 import java.util.SplittableRandom;
 import org.bukkit.Location;
@@ -10,10 +12,11 @@ import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
+import org.bukkit.event.EventHandler;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
 
-public class EnemyDownCommand implements CommandExecutor {
+public class EnemyDownCommand implements CommandExecutor, Listener {
 
   @Override
   public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
@@ -21,8 +24,6 @@ public class EnemyDownCommand implements CommandExecutor {
 
       //共通
       World world = player.getWorld();
-
-
 
       //初期化
       initPlayerStatus(player);
@@ -32,6 +33,7 @@ public class EnemyDownCommand implements CommandExecutor {
 
       //DAY13 敵が出現
       world.spawnEntity(getEnemySpawnLocation(player, world), getEnemy());
+
     }
     return false;
   }
@@ -42,7 +44,7 @@ public class EnemyDownCommand implements CommandExecutor {
    *
    * @param player  コマンドを実行したプレイヤー
    */
-  private static void initPlayerStatus(Player player) {
+  private void initPlayerStatus(Player player) {
     //DAY12 開始時にプレイヤーのステータスを変更する
     //体力と空腹度を最大値にする
     player.setHealth(20);
