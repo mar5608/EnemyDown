@@ -1,6 +1,9 @@
 package plugin.enemydown.command;
 
+import java.net.http.WebSocket;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.SplittableRandom;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -10,30 +13,82 @@ import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.Listener;
+import org.bukkit.event.entity.EntityDeathEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
 
-public class EnemyDownCommand implements CommandExecutor {
+public class EnemyDownCommand implements CommandExecutor, Listener {
 
+  private Player player;
+  private int score;
+  // 上2行だけだと情報を複数持てない(DAY15 18:45)
+  // private Map<Player,Integer> scores;
+
+  /**
+   * コマンドを実行した時に処理される
+   * @param sender コマンドを実行したPlayer情報　Source of the command
+   * @param command ？　Command which was executed
+   * @param label コマンドを実行したPlayerのレベル情報　Alias of the command which was used
+   * @param args Passed command arguments
+   * @return コマンド実行playerとplayerが同じならtrueを返す
+   */
+  // アノテーション（注釈）　コンパイラやJVM向けの情報：特殊なコメント
+  // @Override オーバーライド（メソッドの再定義）
+  // 「このメソッドはオーバーライドしているメソッドです」とコンパイラに伝えるためのもの
+  //  @Overrideアノテーションを付けることで、オーバーライドしていなかった場合、コンパイルエラーを発生させることができる
   @Override
   public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
+    //[検]もしコマンドを実行したplayerと画面の？playerが同じなら
     if(sender instanceof Player player){
-
-      //共通
+      // thisをつけると最初のprivate Player player;になる
+      this.player = player;
+      // 共通
+      // playerの情報からworld情報を取得し変数に持っておく
       World world = player.getWorld();
 
-
-
-      //初期化
+      // 初期化
       initPlayerStatus(player);
 
-      //ゲーム終了 ゲーム開始時に退避したアイテムを戻す
+      // ゲーム終了 ゲーム開始時に退避したアイテムを戻す
       //inventory.setHelmet(helmet);
 
       //DAY13 敵が出現
+      // spawnEntityでは第1引数にnew Locationが必要
       world.spawnEntity(getEnemySpawnLocation(player, world), getEnemy());
+
     }
     return false;
+  }
+
+  //EntityDeathEventイベントがあるのでEventHandlerでGetして使う(DAY15 01:01)
+
+  /**
+   * コマンドを実行したプレイヤーと敵を倒したプレイヤーが同じなら
+   * そのプレイヤーに点数が加算されスコアが表示される。
+   * @param e 敵が倒れた情報
+   */
+  @EventHandler
+  public void onEnemyDeath(EntityDeathEvent e){
+    // 敵を倒したプレイヤー情報を変数playerに格納
+    Player player = e.getEntity().getKiller();
+    //  敵を倒していなければplayerがnullになる
+    //  コマンドを実行していなければthis.playerがnullになる
+    // Nullチェック
+    // プレイヤーが敵を倒していない時playerがNullならreturnを返し処理をスキップする
+    if(Objects.isNull(player)){
+      return;
+    }
+    // プレイヤーがコマンドを実行していない時に敵が倒れたらreturnを返し処理をスキップする
+    if(Objects.isNull(this.player)){
+      return;
+    }
+    // コマンドを実行したプレイヤーとここのplayer（=敵を倒したプレイヤー）が同じなら
+    if(this.player.getName().equals(player.getName())){
+      score += 10;
+      player.sendMessage("敵を倒した！現在のスコアは " + score + "点！");
+    }
   }
 
   /**
@@ -42,7 +97,8 @@ public class EnemyDownCommand implements CommandExecutor {
    *
    * @param player  コマンドを実行したプレイヤー
    */
-  private static void initPlayerStatus(Player player) {
+  // voidは戻り値を戻さないメソッドであることを表す(初級編DAY13)
+  private void initPlayerStatus(Player player) {
     //DAY12 開始時にプレイヤーのステータスを変更する
     //体力と空腹度を最大値にする
     player.setHealth(20);
@@ -50,9 +106,9 @@ public class EnemyDownCommand implements CommandExecutor {
 
     //DAY14 ゲームスタート時の装備変更
     PlayerInventory inventory = player.getInventory();
-    //今持っている装備を退避
+    //今持っている装備を退避（例）
     //ItemStack helmet = inventory.getHelmet();
-    //装備5点をダイヤ装備に変更
+    //装備5点をネザーライト装備に変更
     inventory.setHelmet(new ItemStack(Material.NETHERITE_HELMET));
     inventory.setChestplate(new ItemStack(Material.NETHERITE_CHESTPLATE));
     inventory.setLeggings(new ItemStack(Material.NETHERITE_LEGGINGS));
@@ -64,8 +120,12 @@ public class EnemyDownCommand implements CommandExecutor {
    * ランダムで敵を抽選して、その結果の敵を取得します。
    * @return  敵
    */
+  // メソッドで処理した結果を戻したいt場合にはreturnを使う(初級編DAY13)
+  // private static 戻り値の型 メソッド名(引数のデータ型 引数の変数名)
   private static EntityType getEnemy() {
+    // 敵の情報をリストに登録
     List<EntityType> enemyList = List.of(EntityType.ZOMBIE , EntityType.SKELETON);
+    // ランダムでリストから敵を取得してreturnで返す
     return enemyList.get(new SplittableRandom().nextInt(2));
   }
 
@@ -80,20 +140,21 @@ public class EnemyDownCommand implements CommandExecutor {
    * @return  敵の出現場所
    */
   private Location getEnemySpawnLocation(Player player, World world) {
-    //playerの位置座標を取得
+    //player.getLocation()でplayerの位置座標を取得
     Location playerLocation = player.getLocation();
 
-    //ランダム値生成クラスSplittableRandom nextIntで値を制限 100=0〜99
+    //ランダム値生成クラスSplittableRandom nextIntで値を制限 20 = 0〜19
     // 0だとまずいなら+1,マイナス値を出したい時は-20とかにする
     int randomX = new SplittableRandom().nextInt(20) - 10;
     int randomZ = new SplittableRandom().nextInt(20) - 10;
 
+    // x軸は東西(＋が東)、z軸は南北(＋が南)、y軸は高さ
     double x = playerLocation.getX() + randomX;
     double y = playerLocation.getY();
     double z = playerLocation.getZ() + randomZ;
     //random値出力
     //System.out.println("----------");
-    System.out.println("randomX: " + randomX + "randomZ: " + randomZ + "です");
+    System.out.println("randomX: " + randomX + "　randomZ: " + randomZ + "です");
     return new Location(world,x,y,z);
   }
 }
