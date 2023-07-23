@@ -1,6 +1,7 @@
 package plugin.enemydown.command;
 
 import java.net.http.WebSocket;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -18,11 +19,13 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDeathEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
+import plugin.enemydown.data.PlayerScore;
 
 public class EnemyDownCommand implements CommandExecutor, Listener {
 
-  private Player player;
-  private int score;
+  private List <PlayerScore> playerScoreList = new ArrayList<>();
+  //private Player player;
+  //private int score;
   // 上2行だけだと情報を複数持てない(DAY15 18:45)
   // private Map<Player,Integer> scores;
 
@@ -42,8 +45,18 @@ public class EnemyDownCommand implements CommandExecutor, Listener {
   public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
     //[検]もしコマンドを実行したplayerと画面の？playerが同じなら
     if(sender instanceof Player player){
-      // thisをつけると最初のprivate Player player;になる
-      this.player = player;
+      if(playerScoreList.isEmpty()) {
+        addNewPlayer(player);
+        // thisをつけると最初のprivate Player player;になる
+        // DAY16 でコメントアウト this.player = player;
+      }else  {
+        for(PlayerScore playerScore : playerScoreList){
+          // ! notの意味　
+          if(!playerScore.getPlayerName().equals(player.getName())){
+            addNewPlayer(player);
+          }
+        }
+      }
       // 共通
       // playerの情報からworld情報を取得し変数に持っておく
       World world = player.getWorld();
@@ -62,6 +75,18 @@ public class EnemyDownCommand implements CommandExecutor, Listener {
     return false;
   }
 
+  /**
+   * 新規のプレイヤー情報をリストに追加します。
+   *
+   * @param player コマンドを実行したプレイヤー
+   */
+  private void addNewPlayer(Player player) {
+    PlayerScore playerScore = new PlayerScore();
+    //getterとsetterがpublicなので取ってこれる
+    playerScore.setPlayerName(player.getName());
+    playerScoreList.add(playerScore);
+  }
+
   //EntityDeathEventイベントがあるのでEventHandlerでGetして使う(DAY15 01:01)
 
   /**
@@ -77,18 +102,22 @@ public class EnemyDownCommand implements CommandExecutor, Listener {
     //  コマンドを実行していなければthis.playerがnullになる
     // Nullチェック
     // プレイヤーが敵を倒していない時playerがNullならreturnを返し処理をスキップする
-    if(Objects.isNull(player)){
+    // プレイヤーがコマンドを実行していない時に敵が倒れたらreturnを返し処理をスキップする
+    if(Objects.isNull(player) || playerScoreList.isEmpty()){
       return;
     }
-    // プレイヤーがコマンドを実行していない時に敵が倒れたらreturnを返し処理をスキップする
-    if(Objects.isNull(this.player)){
-      return;
+    for(PlayerScore playerScore : playerScoreList){
+      if(playerScore.getPlayerName().equals(player.getName())){
+        playerScore.setScore(playerScore.getScore()+10);
+        player.sendMessage("敵を倒した！現在のスコアは " + playerScore.getScore() + "点！");
+      }
     }
     // コマンドを実行したプレイヤーとここのplayer（=敵を倒したプレイヤー）が同じなら
-    if(this.player.getName().equals(player.getName())){
+    /* if(this.player.getName().equals(player.getName())){
       score += 10;
       player.sendMessage("敵を倒した！現在のスコアは " + score + "点！");
     }
+     */
   }
 
   /**
