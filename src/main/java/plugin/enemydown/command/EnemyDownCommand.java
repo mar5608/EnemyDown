@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.SplittableRandom;
+import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;
@@ -19,11 +20,24 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDeathEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
+import plugin.enemydown.EnemyDown;
 import plugin.enemydown.data.PlayerScore;
+
+
 
 public class EnemyDownCommand implements CommandExecutor, Listener {
 
+  // DAY17
+  private EnemyDown enemyDown;
   private List <PlayerScore> playerScoreList = new ArrayList<>();
+  //時間はフィールドにもつ
+  // ラムダ式の中で値が変わるものは持てない？
+  private  int gameTime = 20;
+
+  // DAY17
+  public EnemyDownCommand(EnemyDown enemyDown) {
+    this.enemyDown = enemyDown;
+  }
   //private Player player;
   //private int score;
   // 上2行だけだと情報を複数持てない(DAY15 18:45)
@@ -43,6 +57,7 @@ public class EnemyDownCommand implements CommandExecutor, Listener {
   //  @Overrideアノテーションを付けることで、オーバーライドしていなかった場合、コンパイルエラーを発生させることができる
   @Override
   public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
+
     //[検]もしコマンドを実行したplayerと画面の？playerが同じなら
     if(sender instanceof Player player){
       if(playerScoreList.isEmpty()) {
@@ -57,6 +72,7 @@ public class EnemyDownCommand implements CommandExecutor, Listener {
           }
         }
       }
+      gameTime = 20;
       // 共通
       // playerの情報からworld情報を取得し変数に持っておく
       World world = player.getWorld();
@@ -64,12 +80,28 @@ public class EnemyDownCommand implements CommandExecutor, Listener {
       // 初期化
       initPlayerStatus(player);
 
+      // 制限時間
+      // ラムダ式
+      // delay 時間ずらす 
+      // period 間隔 5秒に1回　マイクラ固有1チック20秒 1チックは1秒未満
+      Bukkit.getScheduler().runTaskTimer(enemyDown,Runnable -> {
+        if(gameTime <= 0){
+          // 処理を止める
+          Runnable.cancel();
+          player.sendMessage("ゲームが終了しました。");
+          return;
+        }
+        world.spawnEntity(getEnemySpawnLocation(player, world), getEnemy());
+        gameTime -= 5;
+      }, 0, 5 * 20);
+
       // ゲーム終了 ゲーム開始時に退避したアイテムを戻す
       //inventory.setHelmet(helmet);
 
       //DAY13 敵が出現
       // spawnEntityでは第1引数にnew Locationが必要
-      world.spawnEntity(getEnemySpawnLocation(player, world), getEnemy());
+      // DAY17コメントアウト 時間制限の中へ移動
+      // world.spawnEntity(getEnemySpawnLocation(player, world), getEnemy());
 
     }
     return false;

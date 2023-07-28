@@ -32,7 +32,8 @@ public final class EnemyDown extends JavaPlugin {
     public void onEnable() {
         // Plugin startup logic
         // 変数にする
-        EnemyDownCommand enemyDownCommand = new EnemyDownCommand();
+        // DAY17:引数にthisを指定
+        EnemyDownCommand enemyDownCommand = new EnemyDownCommand(this);
         //Bukkit.getPluginManager().registerEvents(this, this);
         // 登録されたやつ
         Bukkit.getPluginManager().registerEvents(enemyDownCommand, this);
