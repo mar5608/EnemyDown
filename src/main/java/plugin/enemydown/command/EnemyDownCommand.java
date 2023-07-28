@@ -22,9 +22,6 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
 import plugin.enemydown.EnemyDown;
 import plugin.enemydown.data.PlayerScore;
-//import org.bukkit.scheduler;
-//import org.bukkit.scheduler.BukkitRunnable;
-//import org.bukkit.plugin.Plugin;
 
 
 
@@ -34,6 +31,7 @@ public class EnemyDownCommand implements CommandExecutor, Listener {
   private EnemyDown enemyDown;
   private List <PlayerScore> playerScoreList = new ArrayList<>();
   //時間はフィールドにもつ
+  // ラムダ式の中で値が変わるものは持てない？
   private  int gameTime = 20;
 
   // DAY17
@@ -86,7 +84,7 @@ public class EnemyDownCommand implements CommandExecutor, Listener {
       // ラムダ式
       // delay 時間ずらす 
       // period 間隔 5秒に1回　マイクラ固有1チック20秒 1チックは1秒未満
-      Bukkit.getScheduler().runTaskTimer(enemyDown,runnable -> {
+      Bukkit.getScheduler().runTaskTimer(enemyDown,Runnable -> {
         if(gameTime <= 0){
           // 処理を止める
           Runnable.cancel();
