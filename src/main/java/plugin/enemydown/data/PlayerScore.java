@@ -20,6 +20,7 @@ import org.bukkit.entity.Player;
 public class PlayerScore {
   private String playerName;
   private int score;
+  private int gameTime;
 
   // ↑publicにすることも可能だけど現場のお作法的には(DAY16 8:29)
   // privateのまま

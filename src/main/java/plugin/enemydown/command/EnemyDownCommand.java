@@ -30,9 +30,6 @@ public class EnemyDownCommand implements CommandExecutor, Listener {
   // DAY17
   private EnemyDown enemyDown;
   private List <PlayerScore> playerScoreList = new ArrayList<>();
-  //時間はフィールドにもつ
-  // ラムダ式の中で値が変わるものは持てない？
-  private  int gameTime = 20;
 
   // DAY17
   public EnemyDownCommand(EnemyDown enemyDown) {
@@ -60,19 +57,9 @@ public class EnemyDownCommand implements CommandExecutor, Listener {
 
     //[検]もしコマンドを実行したplayerと画面の？playerが同じなら
     if(sender instanceof Player player){
-      if(playerScoreList.isEmpty()) {
-        addNewPlayer(player);
-        // thisをつけると最初のprivate Player player;になる
-        // DAY16 でコメントアウト this.player = player;
-      }else  {
-        for(PlayerScore playerScore : playerScoreList){
-          // ! notの意味　
-          if(!playerScore.getPlayerName().equals(player.getName())){
-            addNewPlayer(player);
-          }
-        }
-      }
-      gameTime = 20;
+      // DAY18 メソッド抽出
+      PlayerScore nowPlayer = getPlayerScore(player);
+      nowPlayer.setGameTime(20);
       // 共通
       // playerの情報からworld情報を取得し変数に持っておく
       World world = player.getWorld();
@@ -85,14 +72,15 @@ public class EnemyDownCommand implements CommandExecutor, Listener {
       // delay 時間ずらす 
       // period 間隔 5秒に1回　マイクラ固有1チック20秒 1チックは1秒未満
       Bukkit.getScheduler().runTaskTimer(enemyDown,Runnable -> {
-        if(gameTime <= 0){
+        if(nowPlayer.getGameTime() <= 0){
           // 処理を止める
           Runnable.cancel();
-          player.sendMessage("ゲームが終了しました。");
+          player.sendTitle("ゲームが終了しました。",nowPlayer.getPlayerName() + " 合計 " + nowPlayer.getScore() + "点",
+              0,30,0);
           return;
         }
         world.spawnEntity(getEnemySpawnLocation(player, world), getEnemy());
-        gameTime -= 5;
+        nowPlayer.setGameTime(nowPlayer.getGameTime()-5);
       }, 0, 5 * 20);
 
       // ゲーム終了 ゲーム開始時に退避したアイテムを戻す
@@ -107,16 +95,19 @@ public class EnemyDownCommand implements CommandExecutor, Listener {
     return false;
   }
 
+
   /**
    * 新規のプレイヤー情報をリストに追加します。
    *
    * @param player コマンドを実行したプレイヤー
+   * @return 新規プレイヤー
    */
-  private void addNewPlayer(Player player) {
-    PlayerScore playerScore = new PlayerScore();
+  private PlayerScore addNewPlayer(Player player) {
+    PlayerScore newPlayer = new PlayerScore();
     //getterとsetterがpublicなので取ってこれる
-    playerScore.setPlayerName(player.getName());
-    playerScoreList.add(playerScore);
+    newPlayer.setPlayerName(player.getName());
+    playerScoreList.add(newPlayer);
+    return newPlayer;
   }
 
   //EntityDeathEventイベントがあるのでEventHandlerでGetして使う(DAY15 01:01)
@@ -150,6 +141,29 @@ public class EnemyDownCommand implements CommandExecutor, Listener {
       player.sendMessage("敵を倒した！現在のスコアは " + score + "点！");
     }
      */
+  }
+
+  /**
+   * 現在実行しているプレイヤーをスコア情報を取得する。
+   * @param player　コマンドを実行したプレイヤー
+   * @return 現在実行しているプレイヤーのスコア情報
+   */
+  private PlayerScore getPlayerScore(Player player) {
+    if(playerScoreList.isEmpty()) {
+      return addNewPlayer(player);
+      // thisをつけると最初のprivate Player player;になる
+      // DAY16 でコメントアウト this.player = player;
+    }else  {
+      for(PlayerScore playerScore : playerScoreList){
+        // ! notの意味　
+        if(!playerScore.getPlayerName().equals(player.getName())){
+          return addNewPlayer(player);
+        }else{
+          return playerScore;
+        }
+      }
+    }
+    return null;
   }
 
   /**
